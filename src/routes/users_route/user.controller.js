@@ -24,9 +24,12 @@ const createUser = async (req, res) => {
     } else {
       const salt = await bcrypt.genSalt();
       const passwordHash = await bcrypt.hash(password, salt);
+      let token = jwt.sign({name:name,email:email},process.env.TOKEN_KEY)
+
       let result = await UserModal.create({
         ...req.body,
         password: passwordHash,
+        token:token
       });
       res.send({
         data: result,
@@ -44,15 +47,12 @@ const loginUser = async (req, res) => {
   const  passwordData = req.body.password;
   try {
     let result = await UserModal.findOne({ email: email });
-    let token = jwt.sign({userId:result._id,email:result.email},process.env.TOKEN_KEY)
-    let {...data} = result
-    let {_doc}= data
     if (!!result) {
           let passwordCheck = bcrypt.compareSync(passwordData, result?.password); // true
 
       if (!!passwordCheck) {
         res.send({
-          data: { ..._doc,token:token },
+          data: result,
           message: "Login SuccessFull",
           status: true,
         });
